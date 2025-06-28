@@ -1,5 +1,128 @@
+// const mongoose = require("mongoose");
+
+// // Lesson Schema
+// const lessonSchema = new mongoose.Schema({
+//   title: {
+//     type: String,
+//     required: true,
+//   },
+//   videoUrl: {
+//     type: String,
+//   },
+//   content: {
+//     type: String,
+//   },
+//   order: {
+//     type: Number,
+//     default: 0,
+//   },
+// }, { _id: true });
+
+// // ✅ New Quiz Schema
+// const quizSchema = new mongoose.Schema({
+//   title: {
+//     type: String,
+//     required: true,
+//   },
+//   description: {
+//     type: String,
+//   },
+//   questions: [
+//     {
+//       questionText: {
+//         type: String,
+//         required: true,
+//       },
+//       options: {
+//         type: [String],
+//         required: true,
+//         validate: {
+//           validator: function (val) {
+//             return val.length >= 2;
+//           },
+//           message: "At least two options are required.",
+//         }
+//       },
+//       correctAnswer: {
+//         type: String,
+//         required: true,
+//       }
+//     }
+//   ]
+// }, { _id: true });
+
+// // Course Schema
+// const courseSchema = new mongoose.Schema({
+//   title: {
+//     type: String,
+//     required: [true, "Please enter course title"],
+//   },
+//   description: {
+//     type: String,
+//     required: [true, "Please enter course description"],
+//   },
+//   category: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "Category",
+//     required: true,
+//   },
+//   type: {
+//     type: String,
+//     enum: ["Free", "Paid"],
+//     default: "Free",
+//   },
+//   price: {
+//     type: Number,
+//     default: 0,
+//   },
+//   author: {
+//     type: String,
+//     required: true,
+//   },
+//   createdBy: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "User",
+//   },
+//   images: [{
+//     type: String, // Cloudinary URL or relative path
+//   }],
+//   lessons: [lessonSchema],
+//   quizzes: [quizSchema],
+
+//   // Likes
+//   likes: {
+//     type: Number,
+//     default: 0,
+//   },
+//   likedBy: [{
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "User",
+//   }],
+
+//   // Favorites
+//   favorite: {
+//     type: Number,
+//     default: 0,
+//   },
+//   favoriteBy: [{
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "User",
+//   }],
+
+//   // Purchased Users
+//   purchasedBy: [{
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: "User",
+//   }],
+// }, {
+//   timestamps: true,
+// });
+
+// module.exports = mongoose.model("Course", courseSchema);
+
 const mongoose = require("mongoose");
 
+// Lesson Schema
 const lessonSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -7,11 +130,9 @@ const lessonSchema = new mongoose.Schema({
   },
   videoUrl: {
     type: String,
-    required: false,
   },
   content: {
     type: String,
-    required: false,
   },
   order: {
     type: Number,
@@ -19,25 +140,40 @@ const lessonSchema = new mongoose.Schema({
   },
 }, { _id: true });
 
+// Quiz Schema
 const quizSchema = new mongoose.Schema({
-  question: {
+  title: {
     type: String,
     required: true,
   },
-  options: [{
+  description: {
     type: String,
-    required: true,
-  }],
-  correctAnswer: {
-    type: String,
-    required: true,
   },
-  order: {
-    type: Number,
-    default: 0,
-  },
+  questions: [
+    {
+      questionText: {
+        type: String,
+        required: true,
+      },
+      options: {
+        type: [String],
+        required: true,
+        validate: {
+          validator: function (val) {
+            return val.length >= 2;
+          },
+          message: "At least two options are required.",
+        },
+      },
+      correctAnswer: {
+        type: String,
+        required: true,
+      },
+    }
+  ],
 }, { _id: true });
 
+// Main Course Schema
 const courseSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -68,15 +204,18 @@ const courseSchema = new mongoose.Schema({
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: false,
   },
-  images: [{
-    type: String, // Cloudinary URL or relative path
-  }],
+  images: [
+    {
+      type: String, // Cloudinary URL or local path
+    }
+  ],
+
+  // Nested Content
   lessons: [lessonSchema],
   quizzes: [quizSchema],
 
-  // Likes
+  // User Engagement
   likes: {
     type: Number,
     default: 0,
@@ -85,8 +224,6 @@ const courseSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   }],
-
-  // Favorites
   favorite: {
     type: Number,
     default: 0,
@@ -96,12 +233,11 @@ const courseSchema = new mongoose.Schema({
     ref: "User",
   }],
 
-  // ✅ Purchased Users
+  // Purchases
   purchasedBy: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
   }],
-
 }, {
   timestamps: true,
 });

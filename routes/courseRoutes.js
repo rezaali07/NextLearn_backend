@@ -119,4 +119,14 @@ router.delete('/:id/quizzes/:quizId', isAuthenticatedUser, authorizedRoles('admi
 // ------------- Final Route: Get Course by ID -----------
 router.get('/:id', getCourseById); // Should come last to avoid route conflicts
 
+// ---------- Earnings Summary for Admin (NEW) -----------
+const { getEarningsSummary } = require('../controller/courseController');
+
+router.get(
+  "/admin/earnings-summary",
+  isAuthenticatedUser,
+  authorizedRoles("admin"),
+  getEarningsSummary
+);
+
 module.exports = router;

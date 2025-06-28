@@ -49,12 +49,13 @@ exports.getPublicCourses = async (req, res) => {
   try {
     const courses = await Course.find()
       .populate('category', 'name')
-      .select('title description price images type likes');
+      .select('_id title description price images type likes'); // ✅ include _id
     res.status(200).json({ success: true, courses });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
 
 exports.getAllCourses = async (req, res) => {
   try {
@@ -79,15 +80,16 @@ exports.getCourseById = async (req, res) => {
   }
 };
 
-exports.updateCourse = async (req, res) => {
-  try {
-    const updated = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!updated) return res.status(404).json({ message: 'Course not found' });
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+// exports.updateCourse = async (req, res) => {
+//   try {
+//     const updated = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
+//     if (!updated) return res.status(404).json({ message: 'Course not found' });
+//     res.json(updated);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 
 exports.deleteCourse = async (req, res) => {
   try {
@@ -156,18 +158,62 @@ exports.getCourseLessons = async (req, res) => {
   }
 };
 
+// exports.addQuiz = async (req, res) => {
+//   try {
+//     const { question, options, correctAnswer, order } = req.body;
+//     const course = await Course.findById(req.params.id);
+//     if (!course) return res.status(404).json({ message: 'Course not found' });
+//     course.quizzes.push({ question, options, correctAnswer, order });
+//     await course.save();
+//     res.status(201).json(course.quizzes);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 exports.addQuiz = async (req, res) => {
   try {
-    const { question, options, correctAnswer, order } = req.body;
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: 'Course not found' });
-    course.quizzes.push({ question, options, correctAnswer, order });
+
+    const { title, description, questions } = req.body;
+
+    // Validate basic fields
+    if (!title || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({
+        error: "Quiz must include a title and an array of questions"
+      });
+    }
+
+    // Validate questions
+    for (const q of questions) {
+      if (
+        !q.questionText ||
+        !Array.isArray(q.options) ||
+        q.options.length < 2 ||
+        !q.correctAnswer
+      ) {
+        return res.status(400).json({
+          error: "Each question must have questionText, at least 2 options, and correctAnswer"
+        });
+      }
+
+      if (!q.options.includes(q.correctAnswer)) {
+        return res.status(400).json({
+          error: `Correct answer must be one of the options in question: "${q.questionText}"`
+        });
+      }
+    }
+
+    // Add quiz
+    course.quizzes.push({ title, description, questions });
     await course.save();
-    res.status(201).json(course.quizzes);
+
+    res.status(201).json({ success: true, quizzes: course.quizzes });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 exports.updateQuiz = async (req, res) => {
   try {
@@ -195,23 +241,36 @@ exports.deleteQuiz = async (req, res) => {
   }
 };
 
+// exports.getCourseQuizzes = async (req, res) => {
+//   try {
+//     const course = await Course.findById(req.params.id);
+//     if (!course) return res.status(404).json({ message: 'Course not found' });
+
+//     if (course.type === 'Paid') {
+//       const user = await User.findById(req.user.id);
+//       if (!user.purchasedCourses.includes(course._id.toString())) {
+//         return res.status(403).json({ success: false, message: 'Please purchase the course to access quizzes' });
+//       }
+//     }
+
+//     res.status(200).json({ success: true, quizzes: course.quizzes });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 exports.getCourseQuizzes = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: 'Course not found' });
-
-    if (course.type === 'Paid') {
-      const user = await User.findById(req.user.id);
-      if (!user.purchasedCourses.includes(course._id.toString())) {
-        return res.status(403).json({ success: false, message: 'Please purchase the course to access quizzes' });
-      }
-    }
 
     res.status(200).json({ success: true, quizzes: course.quizzes });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 // -------- LIKES & FAVORITES --------
 exports.likeCourse = async (req, res) => {
   try {
@@ -389,3 +448,61 @@ exports.canAccessCourse = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
+
+// Update an existing course
+exports.updateCourse = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    if (typeof req.body.title === 'string') course.title = req.body.title;
+    if (typeof req.body.description === 'string') course.description = req.body.description;
+    if (req.body.price !== undefined) course.price = Number(req.body.price);
+
+    await course.save();
+
+    res.status(200).json({ success: true, course });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getEarningsSummary = async (req, res) => {
+  try {
+    const courses = await Course.find().populate("purchasedBy", "_id");
+
+    let totalRevenue = 0;
+    let totalSales = 0;
+    const courseStats = [];
+
+    for (const course of courses) {
+      const purchaseCount = course.purchasedBy.length;
+      const revenue = purchaseCount * (course.price || 0);
+
+      totalRevenue += revenue;
+      totalSales += purchaseCount;
+
+      courseStats.push({
+        courseId: course._id,
+        title: course.title,
+        purchaseCount,
+        revenue,
+      });
+    }
+
+    // Sort top-selling
+    const topSelling = [...courseStats].sort((a, b) => b.purchaseCount - a.purchaseCount).slice(0, 5);
+
+    res.status(200).json({
+      success: true,
+      totalRevenue,
+      totalSales,
+      courseStats,
+      topSelling,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+
