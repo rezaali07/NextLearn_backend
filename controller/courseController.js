@@ -505,4 +505,70 @@ exports.getEarningsSummary = async (req, res) => {
   }
 };
 
+exports.getPurchasedUsersByCourse = async (req, res) => {
+  try {
+    const { courseId } = req.params;
+
+    const course = await Course.findById(courseId).populate({
+      path: "purchasedBy",
+      select: "name email avatar", // choose the user fields you want
+    });
+
+    if (!course) {
+      return res.status(404).json({ success: false, message: "Course not found" });
+    }
+
+    return res.json({
+      success: true,
+      courseId: course._id,
+      courseTitle: course.title,
+      purchasedUsers: course.purchasedBy,
+    });
+  } catch (error) {
+    console.error("Error in getPurchasedUsersByCourse:", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+// Save user quiz progress
+exports.saveQuizProgress = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { courseId, score, answers } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Add progress
+    user.quizProgress.push({
+      course: courseId,
+      score,
+      answers,
+      date: new Date(),
+    });
+
+    await user.save();
+
+    res.status(200).json({ success: true, message: "Quiz progress saved" });
+  } catch (error) {
+    console.error("Error saving quiz progress:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// Get logged-in user's quiz progress
+exports.getQuizProgress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate("quizProgress.course", "title")
+      .select("quizProgress");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({ success: true, progress: user.quizProgress });
+  } catch (error) {
+    console.error("Error fetching quiz progress:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
 

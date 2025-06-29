@@ -37,6 +37,36 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "user",
   },
+
+  // ✅ Added quiz progress tracking
+  quizProgress: [
+    {
+      course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+        required: true,
+      },
+      score: {
+        type: Number,
+        required: true,
+      },
+      answers: [
+        {
+          questionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+          },
+          selectedOption: String,
+          isCorrect: Boolean,
+        },
+      ],
+      date: {
+        type: Date,
+        default: Date.now,
+      },
+    }
+  ],
+
   createdAt: {
     type: Date,
     default: Date.now(),
@@ -45,7 +75,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordDate: Date,
 });
 
-// hash the password before saving
+// Hash the password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();
@@ -53,33 +83,29 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-// generate a token for each user that is jwt token
+// Generate JWT token
 userSchema.methods.getJwtToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
-// compare the password with the hashed password
+// Compare entered password with hashed password
 userSchema.methods.comparePassword = async function (enteredpassword) {
   return await bcrypt.compare(enteredpassword, this.password);
 };
 
-// forget password
+// Forgot password token generator
 userSchema.methods.getResetToken = function () {
-  // generate a token
   const resetToken = crypto.randomBytes(20).toString("hex");
 
-  // hash the token and resetPassword token to userSchema
   this.resetPasswordToken = crypto
     .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
-  // set the expire date
   this.resetPasswordTime = Date.now() + 10 * 60 * 1000;
 
-  // return the token
   return resetToken;
 };
 

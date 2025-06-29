@@ -28,6 +28,8 @@ const {
   purchaseCourse,
   getPurchasedCourses,
   toggleLessonCompletion,
+  saveQuizProgress,
+  getQuizProgress,
 } = require('../controller/courseController');
 
 const { isAuthenticatedUser, authorizedRoles } = require('../middleware/auth');
@@ -98,7 +100,8 @@ router.post('/:id/lessons/:lessonId/complete', isAuthenticatedUser, toggleLesson
 
 router.get('/:id/lessons', isAuthenticatedUser, getCourseLessons);
 router.get('/:id/quizzes', isAuthenticatedUser, getCourseQuizzes);
-
+router.post('/quiz/progress', isAuthenticatedUser, saveQuizProgress);
+router.get("/me/quiz-progress", isAuthenticatedUser, getQuizProgress);
 
 router.get('/:id/can-access', isAuthenticatedUser, canAccessCourse);
 
@@ -128,5 +131,16 @@ router.get(
   authorizedRoles("admin"),
   getEarningsSummary
 );
+
+// get course by user
+const { getPurchasedUsersByCourse } = require("../controller/courseController");
+
+router.get(
+  "/:courseId/purchased-users",
+  isAuthenticatedUser,
+  authorizedRoles("admin"),
+  getPurchasedUsersByCourse
+);
+
 
 module.exports = router;
