@@ -30,6 +30,7 @@ const {
   toggleLessonCompletion,
   saveQuizProgress,
   getQuizProgress,
+  getLessonProgress,
 } = require('../controller/courseController');
 
 const { isAuthenticatedUser, authorizedRoles } = require('../middleware/auth');
@@ -97,6 +98,8 @@ router.post('/:id/favorite', isAuthenticatedUser, favoriteCourse);
 router.post('/:id/unfavorite', isAuthenticatedUser, unfavoriteCourse);
 router.post('/:id/purchase', isAuthenticatedUser, purchaseCourse);
 router.post('/:id/lessons/:lessonId/complete', isAuthenticatedUser, toggleLessonCompletion);
+router.delete('/:id/lessons/:lessonId/complete',isAuthenticatedUser,toggleLessonCompletion);
+router.get('/:id/lesson-progress',isAuthenticatedUser,getLessonProgress);
 
 router.get('/:id/lessons', isAuthenticatedUser, getCourseLessons);
 router.get('/:id/quizzes', isAuthenticatedUser, getCourseQuizzes);
@@ -114,10 +117,15 @@ router.delete('/:id', isAuthenticatedUser, authorizedRoles('admin'), deleteCours
 router.post('/:id/lessons', isAuthenticatedUser, authorizedRoles('admin'), addLesson);
 router.put('/:id/lessons/:lessonId', isAuthenticatedUser, authorizedRoles('admin'), updateLesson);
 router.delete('/:id/lessons/:lessonId', isAuthenticatedUser, authorizedRoles('admin'), deleteLesson);
+router.post("/:courseId/lessons/:lessonId/complete",isAuthenticatedUser,toggleLessonCompletion);
+router.get('/:id/lesson-progress', isAuthenticatedUser, getLessonProgress);
+
 
 router.post('/:id/quizzes', isAuthenticatedUser, authorizedRoles('admin'), addQuiz);
 router.put('/:id/quizzes/:quizId', isAuthenticatedUser, authorizedRoles('admin'), updateQuiz);
 router.delete('/:id/quizzes/:quizId', isAuthenticatedUser, authorizedRoles('admin'), deleteQuiz);
+
+
 
 // ------------- Final Route: Get Course by ID -----------
 router.get('/:id', getCourseById); // Should come last to avoid route conflicts

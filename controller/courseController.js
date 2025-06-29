@@ -572,3 +572,75 @@ exports.getQuizProgress = async (req, res) => {
   }
 };
 
+exports.toggleLessonCompletion = async (req, res) => {
+  const userId = req.user._id;
+  const { id: courseId, lessonId } = req.params;
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Find progress for the course
+    let progress = user.lessonProgress.find(
+      (entry) => entry.course.toString() === courseId
+    );
+
+    if (!progress) {
+      // 🔥 THIS is the fix: include course field when pushing new progress
+      user.lessonProgress.push({
+        course: courseId,
+        lessonsCompleted: [lessonId],
+      });
+    } else {
+      const lessonIndex = progress.lessonsCompleted.findIndex(
+        (l) => l.toString() === lessonId
+      );
+
+      if (lessonIndex === -1) {
+        progress.lessonsCompleted.push(lessonId);
+      } else {
+        // Toggle off if already exists
+        progress.lessonsCompleted.splice(lessonIndex, 1);
+      }
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Lesson marked/unmarked as complete",
+    });
+  } catch (error) {
+    console.error("Error updating lesson progress:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Error updating lesson progress" });
+  }
+};
+
+// courseController.js
+exports.getLessonProgress = async (req, res) => {
+  const userId = req.user._id;
+  const courseId = req.params.id;
+
+  try {
+    const user = await User.findById(userId);
+    const progress = user.lessonProgress.find(
+      (entry) => entry.course.toString() === courseId
+    );
+
+    return res.status(200).json({
+      success: true,
+      courseId,
+      // <-- key must match what the frontend is reading
+      lessonsCompleted: progress?.lessonsCompleted || [],
+    });
+  } catch (error) {
+    console.error("Error fetching lesson progress:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching lesson progress",
+    });
+  }
+};

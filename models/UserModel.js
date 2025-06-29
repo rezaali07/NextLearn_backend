@@ -66,6 +66,22 @@ const userSchema = new mongoose.Schema({
       },
     }
   ],
+  lessonProgress: [
+  {
+    course: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      required: true,
+    },
+    lessonsCompleted: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson",
+      },
+    ],
+  },
+],
+
 
   createdAt: {
     type: Date,
