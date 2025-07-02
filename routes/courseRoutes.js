@@ -31,6 +31,7 @@ const {
   saveQuizProgress,
   getQuizProgress,
   getLessonProgress,
+  getCourseProgress,
 } = require('../controller/courseController');
 
 const { isAuthenticatedUser, authorizedRoles } = require('../middleware/auth');
@@ -106,6 +107,8 @@ router.get('/:id/quizzes', isAuthenticatedUser, getCourseQuizzes);
 router.post('/quiz/progress', isAuthenticatedUser, saveQuizProgress);
 router.get("/me/quiz-progress", isAuthenticatedUser, getQuizProgress);
 
+router.get("/me/course-progress", isAuthenticatedUser, getCourseProgress);
+
 router.get('/:id/can-access', isAuthenticatedUser, canAccessCourse);
 
 // -------------------- Admin Routes ---------------------
@@ -149,6 +152,7 @@ router.get(
   authorizedRoles("admin"),
   getPurchasedUsersByCourse
 );
+
 
 
 module.exports = router;

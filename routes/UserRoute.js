@@ -19,6 +19,7 @@ const {
   authorizedRoles,
   auth,
 } = require("../middleware/auth");
+const { getCourseProgress } = require("../controller/courseController");
 
 const router = express.Router();
 
@@ -47,6 +48,7 @@ router
 
 router.route("/me").get(isAuthenticatedUser, userDetails);
 router.route("/userdetails").get(auth, userDetails);
+
 
 // Admin routes
 router

@@ -79,9 +79,19 @@ const userSchema = new mongoose.Schema({
         ref: "Lesson",
       },
     ],
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    lastCompletedDate: {
+      type: Date,
+    },
+    revisionCount: {
+      type: Number,
+      default: 0,
+    },
   },
 ],
-
 
   createdAt: {
     type: Date,

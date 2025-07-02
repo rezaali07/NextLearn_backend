@@ -394,34 +394,34 @@ exports.getPurchasedCourses = async (req, res) => {
 };
 
 
-exports.toggleLessonCompletion = async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    const courseId = req.params.id;
-    const lessonId = req.params.lessonId;
+// exports.toggleLessonCompletion = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user.id);
+//     const courseId = req.params.id;
+//     const lessonId = req.params.lessonId;
 
-    const existing = user.completedLessons.find(
-      (item) => item.courseId.toString() === courseId && item.lessonId.toString() === lessonId
-    );
+//     const existing = user.completedLessons.find(
+//       (item) => item.courseId.toString() === courseId && item.lessonId.toString() === lessonId
+//     );
 
-    if (existing) {
-      user.completedLessons = user.completedLessons.filter(
-        (item) => !(item.courseId.toString() === courseId && item.lessonId.toString() === lessonId)
-      );
-    } else {
-      user.completedLessons.push({ courseId, lessonId });
-    }
+//     if (existing) {
+//       user.completedLessons = user.completedLessons.filter(
+//         (item) => !(item.courseId.toString() === courseId && item.lessonId.toString() === lessonId)
+//       );
+//     } else {
+//       user.completedLessons.push({ courseId, lessonId });
+//     }
 
-    await user.save();
+//     await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: existing ? "Lesson marked incomplete" : "Lesson marked complete",
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: existing ? "Lesson marked incomplete" : "Lesson marked complete",
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 // In courseController.js
 exports.canAccessCourse = async (req, res) => {
@@ -572,52 +572,94 @@ exports.getQuizProgress = async (req, res) => {
   }
 };
 
+// exports.toggleLessonCompletion = async (req, res) => {
+//   const userId = req.user._id;
+//   const { id: courseId, lessonId } = req.params;
+
+//   try {
+//     const user = await User.findById(userId);
+
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     // Find progress for the course
+//     let progress = user.lessonProgress.find(
+//       (entry) => entry.course.toString() === courseId
+//     );
+
+//     if (!progress) {
+//       // 🔥 THIS is the fix: include course field when pushing new progress
+//       user.lessonProgress.push({
+//         course: courseId,
+//         lessonsCompleted: [lessonId],
+//       });
+//     } else {
+//       const lessonIndex = progress.lessonsCompleted.findIndex(
+//         (l) => l.toString() === lessonId
+//       );
+
+//       if (lessonIndex === -1) {
+//         progress.lessonsCompleted.push(lessonId);
+//       } else {
+//         // Toggle off if already exists
+//         progress.lessonsCompleted.splice(lessonIndex, 1);
+//       }
+//     }
+
+//     await user.save();
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Lesson marked/unmarked as complete",
+//     });
+//   } catch (error) {
+//     console.error("Error updating lesson progress:", error);
+//     res
+//       .status(500)
+//       .json({ success: false, message: "Error updating lesson progress" });
+//   }
+// };
+
 exports.toggleLessonCompletion = async (req, res) => {
   const userId = req.user._id;
   const { id: courseId, lessonId } = req.params;
 
   try {
     const user = await User.findById(userId);
-
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // Find progress for the course
     let progress = user.lessonProgress.find(
       (entry) => entry.course.toString() === courseId
     );
 
     if (!progress) {
-      // 🔥 THIS is the fix: include course field when pushing new progress
       user.lessonProgress.push({
         course: courseId,
         lessonsCompleted: [lessonId],
+        startDate: new Date(),
+        lastCompletedDate: new Date(),
       });
     } else {
-      const lessonIndex = progress.lessonsCompleted.findIndex(
-        (l) => l.toString() === lessonId
+      const index = progress.lessonsCompleted.findIndex(
+        (id) => id.toString() === lessonId
       );
 
-      if (lessonIndex === -1) {
+      if (index === -1) {
         progress.lessonsCompleted.push(lessonId);
       } else {
-        // Toggle off if already exists
-        progress.lessonsCompleted.splice(lessonIndex, 1);
+        progress.lessonsCompleted.splice(index, 1);
       }
+
+      progress.lastCompletedDate = new Date(); // ✅ UPDATE THIS
     }
 
     await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Lesson marked/unmarked as complete",
-    });
+    res.status(200).json({ success: true, message: "Lesson toggled" });
   } catch (error) {
-    console.error("Error updating lesson progress:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Error updating lesson progress" });
+    console.error("Lesson completion toggle failed:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // courseController.js
 exports.getLessonProgress = async (req, res) => {
@@ -642,5 +684,78 @@ exports.getLessonProgress = async (req, res) => {
       success: false,
       message: "Error fetching lesson progress",
     });
+  }
+};
+
+// exports.getCourseProgress = async (req, res) => {
+//   try {
+//     const user = await User.findById(req.user._id).populate("lessonProgress.course");
+
+//     const progressData = user.lessonProgress.map((entry) => {
+//       const totalLessons = entry.course?.lessons?.length || 0;
+//       const completed = entry.lessonsCompleted.length;
+//       const completion = totalLessons ? Math.round((completed / totalLessons) * 100) : 0;
+
+//       const startDate = new Date(entry.startDate);
+//       const lastCompleted = entry.lastCompletedDate ? new Date(entry.lastCompletedDate) : new Date();
+//       const timeDiffDays = Math.max(1, Math.ceil((lastCompleted - startDate) / (1000 * 60 * 60 * 24)));
+
+//       return {
+//         courseTitle: entry.course.title,
+//         startDate,
+//         completion,
+//         timeSpent: timeDiffDays,
+//         revisionCount: entry.revisionCount,
+//       };
+//     });
+
+//     res.status(200).json({ success: true, progress: progressData });
+//   } catch (error) {
+//     res.status(500).json({ success: false, message: "Failed to fetch progress", error });
+//   }
+// };
+
+
+// Get user's course progress
+exports.getCourseProgress = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate("lessonProgress.course");
+
+    const progressData = user.lessonProgress.map((entry) => {
+      const totalLessons = entry.course?.lessons?.length || 0;
+      const completed = entry.lessonsCompleted.length;
+      const completion = totalLessons
+        ? Math.round((completed / totalLessons) * 100)
+        : 0;
+
+      const startDate = new Date(entry.startDate);
+      const lastCompleted = entry.lastCompletedDate
+        ? new Date(entry.lastCompletedDate)
+        : new Date();
+
+      const timeDiffDays = Math.max(
+        1,
+        Math.ceil((lastCompleted - startDate) / (1000 * 60 * 60 * 24))
+      );
+
+      return {
+        course: {
+          title: entry.course.title,
+          _id: entry.course._id,
+        },
+        startDate: entry.startDate,
+        completedDate: entry.lastCompletedDate,
+        lessonsCompleted: entry.lessonsCompleted,
+        totalLessons: totalLessons,
+        completion,
+        timeSpent: timeDiffDays,
+      };
+    });
+
+    res.status(200).json({ success: true, progress: progressData });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch progress", error });
   }
 };
