@@ -289,3 +289,52 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
         message: "User deleted successfully",
     });
 });
+
+
+// Send notification to all users
+exports.sendNotificationToAll = async (req, res) => {
+  try {
+    const { title, message } = req.body;
+
+    if (!title || !message) {
+      return res.status(400).json({ success: false, message: "Title and message are required" });
+    }
+
+    const notification = {
+      title,
+      message,
+      date: new Date(),
+      read: false,
+    };
+
+    await User.updateMany({}, { $push: { notifications: notification } });
+
+    res.status(200).json({ success: true, message: "Notification sent to all users" });
+  } catch (error) {
+    console.error("Error sending notifications:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+exports.getMyNotifications = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('notifications');
+    res.status(200).json({ success: true, notifications: user.notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to load notifications' });
+  }
+};
+
+exports.markNotificationAsRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    await User.updateOne(
+      { _id: req.user._id, 'notifications._id': notificationId },
+      { $set: { 'notifications.$.read': true } }
+    );
+    res.status(200).json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to mark as read' });
+  }
+};
+

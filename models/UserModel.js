@@ -111,6 +111,13 @@ activityLog: [
     },
   },
 ],
+notifications: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Notification",
+  },
+],
+
 
 
   createdAt: {

@@ -13,6 +13,9 @@ const {
   getSingleUser,
   updateUserRole,
   deleteUser,
+  sendNotificationToAll,
+  getMyNotifications,
+  markNotificationAsRead
 } = require("../controller/UserController");
 const {
   isAuthenticatedUser,
@@ -55,10 +58,21 @@ router
   .route("/admin/users")
   .get(isAuthenticatedUser, authorizedRoles("admin"), getAllUsers);
 
+
 router
   .route("/admin/user/:id")
   .get(isAuthenticatedUser, authorizedRoles("admin"), getSingleUser)
   .put(isAuthenticatedUser, authorizedRoles("admin"), updateUserRole)
   .delete(isAuthenticatedUser, authorizedRoles("admin"), deleteUser);
+
+// Admin route to send notifications
+router.post('/notify-all', isAuthenticatedUser, authorizedRoles('admin'), sendNotificationToAll);
+
+// Get current user's notifications
+router.get('/me', isAuthenticatedUser, getMyNotifications);
+
+// Mark a notification as read
+router.patch('/read/:notificationId', isAuthenticatedUser, markNotificationAsRead);
+
 
 module.exports = router;
