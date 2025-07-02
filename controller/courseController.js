@@ -3,6 +3,22 @@ const Category = require('../models/CategoryModel');
 const User = require('../models/UserModel');
 const path = require('path');
 const fs = require('fs');
+// Helper to log activity in user
+async function logUserActivity(userId, action, courseId, details = '') {
+  try {
+    const user = await User.findById(userId);
+    if (!user) return;
+    user.activityLog.push({
+      action,
+      course: courseId,
+      details,
+      date: new Date(),
+    });
+    await user.save();
+  } catch (err) {
+    console.error("Failed to log user activity:", err);
+  }
+}
 
 // Create a new course
 exports.createCourse = async (req, res) => {
@@ -80,15 +96,6 @@ exports.getCourseById = async (req, res) => {
   }
 };
 
-// exports.updateCourse = async (req, res) => {
-//   try {
-//     const updated = await Course.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//     if (!updated) return res.status(404).json({ message: 'Course not found' });
-//     res.json(updated);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
 
 
 exports.deleteCourse = async (req, res) => {
@@ -158,18 +165,6 @@ exports.getCourseLessons = async (req, res) => {
   }
 };
 
-// exports.addQuiz = async (req, res) => {
-//   try {
-//     const { question, options, correctAnswer, order } = req.body;
-//     const course = await Course.findById(req.params.id);
-//     if (!course) return res.status(404).json({ message: 'Course not found' });
-//     course.quizzes.push({ question, options, correctAnswer, order });
-//     await course.save();
-//     res.status(201).json(course.quizzes);
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
 exports.addQuiz = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -241,24 +236,6 @@ exports.deleteQuiz = async (req, res) => {
   }
 };
 
-// exports.getCourseQuizzes = async (req, res) => {
-//   try {
-//     const course = await Course.findById(req.params.id);
-//     if (!course) return res.status(404).json({ message: 'Course not found' });
-
-//     if (course.type === 'Paid') {
-//       const user = await User.findById(req.user.id);
-//       if (!user.purchasedCourses.includes(course._id.toString())) {
-//         return res.status(403).json({ success: false, message: 'Please purchase the course to access quizzes' });
-//       }
-//     }
-
-//     res.status(200).json({ success: true, quizzes: course.quizzes });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
 exports.getCourseQuizzes = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -270,7 +247,6 @@ exports.getCourseQuizzes = async (req, res) => {
   }
 };
 
-
 // -------- LIKES & FAVORITES --------
 exports.likeCourse = async (req, res) => {
   try {
@@ -281,6 +257,9 @@ exports.likeCourse = async (req, res) => {
       course.likedBy.push(req.user.id);
       course.likes = course.likedBy.length;
       await course.save();
+
+      // Log user activity
+      await logUserActivity(req.user.id, 'liked', course._id.toString());
     }
 
     res.status(200).json({ message: 'Course liked', likes: course.likes });
@@ -313,7 +292,6 @@ exports.getLikedCourses = async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 exports.favoriteCourse = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
@@ -323,6 +301,9 @@ exports.favoriteCourse = async (req, res) => {
       course.favoriteBy.push(req.user.id);
       course.favorite = course.favoriteBy.length;
       await course.save();
+
+      // Log user activity
+      await logUserActivity(req.user.id, 'favorited', course._id.toString());
     }
 
     res.status(200).json({ message: 'Course favorited', favorites: course.favorite });
@@ -363,12 +344,10 @@ exports.purchaseCourse = async (req, res) => {
     const course = await Course.findById(req.params.id);
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
-    // Ensure purchasedBy array exists
     if (!Array.isArray(course.purchasedBy)) {
       course.purchasedBy = [];
     }
 
-    // Prevent double-purchase
     if (course.purchasedBy.includes(req.user.id)) {
       return res.status(400).json({ message: 'Course already purchased' });
     }
@@ -376,11 +355,15 @@ exports.purchaseCourse = async (req, res) => {
     course.purchasedBy.push(req.user.id);
     await course.save();
 
+    // Log user activity
+    await logUserActivity(req.user.id, 'purchased', course._id.toString());
+
     res.status(200).json({ success: true, message: "Course purchased" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 
 exports.getPurchasedCourses = async (req, res) => {
@@ -393,35 +376,6 @@ exports.getPurchasedCourses = async (req, res) => {
   }
 };
 
-
-// exports.toggleLessonCompletion = async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user.id);
-//     const courseId = req.params.id;
-//     const lessonId = req.params.lessonId;
-
-//     const existing = user.completedLessons.find(
-//       (item) => item.courseId.toString() === courseId && item.lessonId.toString() === lessonId
-//     );
-
-//     if (existing) {
-//       user.completedLessons = user.completedLessons.filter(
-//         (item) => !(item.courseId.toString() === courseId && item.lessonId.toString() === lessonId)
-//       );
-//     } else {
-//       user.completedLessons.push({ courseId, lessonId });
-//     }
-
-//     await user.save();
-
-//     res.status(200).json({
-//       success: true,
-//       message: existing ? "Lesson marked incomplete" : "Lesson marked complete",
-//     });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 // In courseController.js
 exports.canAccessCourse = async (req, res) => {
@@ -537,13 +491,27 @@ exports.saveQuizProgress = async (req, res) => {
     const { courseId, score, answers } = req.body;
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const course = await Course.findById(courseId);
 
-    // Add progress
+    if (!user || !course) {
+      return res.status(404).json({ message: "User or course not found" });
+    }
+
+    const quiz = course.quizzes[0]; // or however you're storing it
+    const totalQuestions = quiz?.questions?.length || 0;
+
     user.quizProgress.push({
       course: courseId,
       score,
       answers,
+      date: new Date(),
+    });
+
+    // 🔥 Add activity log
+    user.activityLog.push({
+      action: "quiz_attempt",
+      course: courseId,
+      details: `${score}/${totalQuestions}`, // ✅ <-- here
       date: new Date(),
     });
 
@@ -555,6 +523,8 @@ exports.saveQuizProgress = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+
 
 // Get logged-in user's quiz progress
 exports.getQuizProgress = async (req, res) => {
@@ -571,53 +541,6 @@ exports.getQuizProgress = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-
-// exports.toggleLessonCompletion = async (req, res) => {
-//   const userId = req.user._id;
-//   const { id: courseId, lessonId } = req.params;
-
-//   try {
-//     const user = await User.findById(userId);
-
-//     if (!user) return res.status(404).json({ message: "User not found" });
-
-//     // Find progress for the course
-//     let progress = user.lessonProgress.find(
-//       (entry) => entry.course.toString() === courseId
-//     );
-
-//     if (!progress) {
-//       // 🔥 THIS is the fix: include course field when pushing new progress
-//       user.lessonProgress.push({
-//         course: courseId,
-//         lessonsCompleted: [lessonId],
-//       });
-//     } else {
-//       const lessonIndex = progress.lessonsCompleted.findIndex(
-//         (l) => l.toString() === lessonId
-//       );
-
-//       if (lessonIndex === -1) {
-//         progress.lessonsCompleted.push(lessonId);
-//       } else {
-//         // Toggle off if already exists
-//         progress.lessonsCompleted.splice(lessonIndex, 1);
-//       }
-//     }
-
-//     await user.save();
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Lesson marked/unmarked as complete",
-//     });
-//   } catch (error) {
-//     console.error("Error updating lesson progress:", error);
-//     res
-//       .status(500)
-//       .json({ success: false, message: "Error updating lesson progress" });
-//   }
-// };
 
 exports.toggleLessonCompletion = async (req, res) => {
   const userId = req.user._id;
@@ -759,3 +682,23 @@ exports.getCourseProgress = async (req, res) => {
       .json({ success: false, message: "Failed to fetch progress", error });
   }
 };
+
+// Get user's activity history
+exports.getUserActivityLog = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate('activityLog.course', 'title') // include course title
+      .select('activityLog');
+
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // Sort descending by date
+    const sortedLogs = [...user.activityLog].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.status(200).json({ success: true, activityLog: sortedLogs });
+  } catch (error) {
+    console.error("Error fetching activity log:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch activity history" });
+  }
+};
+

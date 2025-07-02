@@ -92,6 +92,26 @@ const userSchema = new mongoose.Schema({
     },
   },
 ],
+activityLog: [
+  {
+    action: {
+      type: String, // e.g. "liked", "favorited", "quiz_attempt", "course_started"
+      required: true,
+    },
+    course: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+    },
+    details: {
+      type: String, // optional text like quiz score or note
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
+
 
   createdAt: {
     type: Date,

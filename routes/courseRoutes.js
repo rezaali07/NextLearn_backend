@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { protect } = require('../middleware/auth');
 
 const {
   createCourse,
@@ -32,6 +33,7 @@ const {
   getQuizProgress,
   getLessonProgress,
   getCourseProgress,
+  getUserActivityLog,
 } = require('../controller/courseController');
 
 const { isAuthenticatedUser, authorizedRoles } = require('../middleware/auth');
@@ -128,6 +130,7 @@ router.post('/:id/quizzes', isAuthenticatedUser, authorizedRoles('admin'), addQu
 router.put('/:id/quizzes/:quizId', isAuthenticatedUser, authorizedRoles('admin'), updateQuiz);
 router.delete('/:id/quizzes/:quizId', isAuthenticatedUser, authorizedRoles('admin'), deleteQuiz);
 
+router.get('/activity/history', isAuthenticatedUser, getUserActivityLog);
 
 
 // ------------- Final Route: Get Course by ID -----------
