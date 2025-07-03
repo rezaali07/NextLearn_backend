@@ -9,6 +9,7 @@ const dotenv = require("dotenv");
 const categoryRoutes = require("./routes/categoryRoutes");
 const paymentRoutes = require("./routes/PaymentRoute");
 const notificationRoutes = require("./routes/notificationRoutes");
+const globalSettingRoutes = require("./routes/globalSettingRoute");
 
 // Middleware
 app.use(express.json());
@@ -34,6 +35,7 @@ app.use("/api/v2/courses", course);
 app.use("/api/v2/categories", category);
 app.use("/api/v2/payment", paymentRoutes);
 app.use("/api/v2/notifications", notificationRoutes);
+app.use("/api", globalSettingRoutes);
 
 // Error Handler
 app.use(ErrorHandler);
