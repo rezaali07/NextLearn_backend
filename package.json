@@ -30,6 +30,7 @@
         "nodemailer": "^6.9.16",
         "nodemon": "^2.0.15",
         "npm": "^8.7.0",
+        "slugify": "^1.6.6",
         "stripe": "^8.215.0",
         "validator": "^13.7.0"
     }
