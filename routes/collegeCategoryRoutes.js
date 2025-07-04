@@ -1,27 +1,3 @@
-// // routes/collegeCategoryRoutes.js
-
-// const express = require("express");
-// const {
-//   createCategory,
-//   getAllCategories,
-//   updateCategory,
-//   deleteCategory,
-// } = require("../controller/collegeCategoryController");
-
-// const { isAuthenticatedUser, authorizedRoles} = require("../middleware/auth");
-// const router = express.Router();
-
-// // Public
-// router.get("/", getAllCategories);
-
-// // Admin
-// router.post("/", isAuthenticatedUser, authorizedRoles('admin'), createCategory);
-// router.put("/:slug", isAuthenticatedUser, authorizedRoles('admin'), updateCategory);
-// router.delete("/:slug", isAuthenticatedUser, authorizedRoles('admin'), deleteCategory);
-
-// module.exports = router;
-
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -29,12 +5,17 @@ const {
   getAllCategories,
   updateCategory,
   deleteCategory,
+  getCategoryBySlug,  // <-- add this
 } = require("../controller/collegeCategoryController");
+
 const { isAuthenticatedUser, authorizedRoles } = require("../middleware/auth");
-const upload = require("../middleware/upload.js"); // adjust path as needed
+const upload = require("../middleware/upload.js");
 
+// Public routes
 router.get("/", getAllCategories);
+router.get("/:slug", getCategoryBySlug);  // <--- ADD THIS
 
+// Admin routes
 router.post(
   "/",
   isAuthenticatedUser,

@@ -1,5 +1,3 @@
-// routes/collegeProgramRoutes.js
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -7,20 +5,22 @@ const {
   getAllPrograms,
   updateProgram,
   deleteProgram,
+  getProgramBySlug,  // <-- add this
 } = require("../controller/collegeProgramController");
 
 const { isAuthenticatedUser, authorizedRoles } = require("../middleware/auth");
-const upload = require("../middleware/upload.js"); // ✅ Use same logic as category
+const upload = require("../middleware/upload.js");
 
-// Public
+// Public routes
 router.get("/", getAllPrograms);
+router.get("/:slug", getProgramBySlug);  // <--- ADD THIS
 
-// Admin
+// Admin routes
 router.post(
   "/",
   isAuthenticatedUser,
   authorizedRoles("admin"),
-  upload.fields([{ name: "programImage", maxCount: 1 }]), // ✅ Use matching field name
+  upload.fields([{ name: "programImage", maxCount: 1 }]),
   createProgram
 );
 
