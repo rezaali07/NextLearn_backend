@@ -7,6 +7,10 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const path = require("path");
 
+// Import admin routes for exams/levels/programs
+const adminExamRoutes = require("./routes/adminExamRoutes");
+const userExamRoutes = require("./routes/userExamRoutes");
+
 // Load environment variables
 dotenv.config({ path: "backend/config/.env" });
 
@@ -50,6 +54,13 @@ app.use("/api/v2/colleges", collegeRoutes);
 app.use("/api/v2/college-categories", collegeCategoryRoutes);
 app.use("/api/v2/college-programs", collegeProgramRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+//exams
+app.use("/api/admin/exams", adminExamRoutes);
+app.use("/api/user/exams", userExamRoutes);
+
+
+
 
 // =======================
 // Error Handling

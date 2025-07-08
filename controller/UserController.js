@@ -338,3 +338,20 @@ exports.markNotificationAsRead = async (req, res) => {
   }
 };
 
+
+exports.updateTourStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.isFirstTimeUser = false;
+    await user.save();
+
+    res.status(200).json({ message: "User tour status updated" });
+  } catch (error) {
+    console.error("Error updating tour status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};

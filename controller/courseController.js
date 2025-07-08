@@ -610,35 +610,6 @@ exports.getLessonProgress = async (req, res) => {
   }
 };
 
-// exports.getCourseProgress = async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user._id).populate("lessonProgress.course");
-
-//     const progressData = user.lessonProgress.map((entry) => {
-//       const totalLessons = entry.course?.lessons?.length || 0;
-//       const completed = entry.lessonsCompleted.length;
-//       const completion = totalLessons ? Math.round((completed / totalLessons) * 100) : 0;
-
-//       const startDate = new Date(entry.startDate);
-//       const lastCompleted = entry.lastCompletedDate ? new Date(entry.lastCompletedDate) : new Date();
-//       const timeDiffDays = Math.max(1, Math.ceil((lastCompleted - startDate) / (1000 * 60 * 60 * 24)));
-
-//       return {
-//         courseTitle: entry.course.title,
-//         startDate,
-//         completion,
-//         timeSpent: timeDiffDays,
-//         revisionCount: entry.revisionCount,
-//       };
-//     });
-
-//     res.status(200).json({ success: true, progress: progressData });
-//   } catch (error) {
-//     res.status(500).json({ success: false, message: "Failed to fetch progress", error });
-//   }
-// };
-
-
 // Get user's course progress
 exports.getCourseProgress = async (req, res) => {
   try {
@@ -702,3 +673,39 @@ exports.getUserActivityLog = async (req, res) => {
   }
 };
 
+
+
+exports.getCoursesByCategory = async (req, res, next) => {
+  try {
+    const categoryId = req.params.categoryId;
+
+    const courses = await Course.find({ category: categoryId });
+
+    res.status(200).json(courses);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+exports.searchCourses = async (req, res) => {
+  try {
+    const searchTerm = req.query.search || "";
+    if (!searchTerm) {
+      return res.status(400).json({ error: "Please provide a search query" });
+    }
+
+    // Case-insensitive regex search on title or description
+    const regex = new RegExp(searchTerm, "i");
+
+    const courses = await Course.find({
+      $or: [{ title: regex }, { description: regex }],
+    }).populate("category", "name");
+
+    res.status(200).json({ success: true, courses });
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Server error during search" });
+  }
+};

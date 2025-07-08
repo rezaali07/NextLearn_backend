@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
     default: "user",
   },
 
-  // ✅ Added quiz progress tracking
+  // ✅ Quiz progress tracking
   quizProgress: [
     {
       course: {
@@ -66,69 +66,80 @@ const userSchema = new mongoose.Schema({
       },
     }
   ],
+
+  // ✅ Lesson progress tracking
   lessonProgress: [
-  {
-    course: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-    lessonsCompleted: [
-      {
+    {
+      course: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Lesson",
+        ref: "Course",
+        required: true,
       },
-    ],
-    startDate: {
-      type: Date,
-      default: Date.now,
+      lessonsCompleted: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Lesson",
+        },
+      ],
+      startDate: {
+        type: Date,
+        default: Date.now,
+      },
+      lastCompletedDate: {
+        type: Date,
+      },
+      revisionCount: {
+        type: Number,
+        default: 0,
+      },
     },
-    lastCompletedDate: {
-      type: Date,
+  ],
+
+  // ✅ Activity log
+  activityLog: [
+    {
+      action: {
+        type: String, // e.g. "liked", "favorited", "quiz_attempt", "course_started"
+        required: true,
+      },
+      course: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+      details: {
+        type: String, // optional text like quiz score or note
+      },
+      date: {
+        type: Date,
+        default: Date.now,
+      },
     },
-    revisionCount: {
-      type: Number,
-      default: 0,
-    },
-  },
-],
-activityLog: [
-  {
-    action: {
-      type: String, // e.g. "liked", "favorited", "quiz_attempt", "course_started"
-      required: true,
-    },
-    course: {
+  ],
+
+  // ✅ Notifications
+  notifications: [
+    {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
+      ref: "Notification",
     },
-    details: {
-      type: String, // optional text like quiz score or note
-    },
-    date: {
-      type: Date,
-      default: Date.now,
-    },
-  },
-],
-notifications: [
-  {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Notification",
-  },
-],
+  ],
 
-
+  // ✅ New User Tour Tracker
+  isFirstTimeUser: {
+    type: Boolean,
+    default: true,
+  },
 
   createdAt: {
     type: Date,
     default: Date.now(),
   },
+
   resetPasswordToken: String,
   resetPasswordDate: Date,
 });
 
-// Hash the password before saving
+// 🔒 Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();
@@ -136,19 +147,19 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-// Generate JWT token
+// 🔑 JWT token generator
 userSchema.methods.getJwtToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
   });
 };
 
-// Compare entered password with hashed password
+// 🔐 Compare entered password
 userSchema.methods.comparePassword = async function (enteredpassword) {
   return await bcrypt.compare(enteredpassword, this.password);
 };
 
-// Forgot password token generator
+// 🔁 Forgot password token generator
 userSchema.methods.getResetToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");
 

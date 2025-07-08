@@ -15,7 +15,8 @@ const {
   deleteUser,
   sendNotificationToAll,
   getMyNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  updateTourStatus,
 } = require("../controller/UserController");
 const {
   isAuthenticatedUser,
@@ -74,5 +75,8 @@ router.get('/me', isAuthenticatedUser, getMyNotifications);
 // Mark a notification as read
 router.patch('/read/:notificationId', isAuthenticatedUser, markNotificationAsRead);
 
+
+// ✅ Update first-time tour status
+router.put("/update-tour-status", isAuthenticatedUser, updateTourStatus);
 
 module.exports = router;
