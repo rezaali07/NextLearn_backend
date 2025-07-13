@@ -7,12 +7,16 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const path = require("path");
 
+
 // Import admin routes for exams/levels/programs
 const adminExamRoutes = require("./routes/adminExamRoutes");
 const userExamRoutes = require("./routes/userExamRoutes");
 
 // Load environment variables
 dotenv.config({ path: "backend/config/.env" });
+
+//AI 
+const aiRoutes = require("./routes/aiRoutes");
 
 // =======================
 // Middleware
@@ -59,7 +63,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/admin/exams", adminExamRoutes);
 app.use("/api/user/exams", userExamRoutes);
 
-
+//AI
+app.use("/api/ai", aiRoutes);
 
 
 // =======================
